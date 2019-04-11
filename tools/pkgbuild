@@ -64,27 +64,27 @@ done
 
 PKG_LOCATION=$(realpath "$1")
 
-mkdir -p "$TMP_DIR/darwin/flat/"
-mkdir -p "$TMP_DIR/darwin/root/$(dirname "$INSTALL_LOC")"
-cp -R "$ROOT" "$TMP_DIR/darwin/root/$INSTALL_LOC"
-NUM_FILES=$(find ${TMP_DIR}/darwin/root | wc -l)
-INSTALL_KB_SIZE=$(du -k -s ${TMP_DIR}/darwin/root | awk '{print $1}')
+mkdir -p "$TMP_DIR/flat/base.pkg"
+cp -R "$ROOT" "$TMP_DIR/root"
+NUM_FILES=$(find "${TMP_DIR}/root" | wc -l)
+INSTALL_KB_SIZE=$(du -k -s "${TMP_DIR}/root" | awk '{print $1}')
 
 SCRIPT="<scripts/>"
+ENABLE_SCRIPT=false
 
 if [ -d "$SCRIPTS_SRC" ]; then
-	cp -R "$SCRIPTS_SRC" "${TMP_DIR}/darwin/flat/Scripts"
+	( cd "$SCRIPTS_SRC" && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > "${TMP_DIR}/flat/base.pkg/Scripts"
 	SCRIPT="<scripts>"
 	if [ -f "$SCRIPTS_SRC/preinstall" ]; then
-		SCRIPT+="\n        <preinstall file=\"./preinstall\"/>"
+		SCRIPT+=$'\n        <preinstall file="./preinstall"/>'
 	fi
 	if [ -f "$SCRIPTS_SRC/postinstall" ]; then
-		SCRIPT+="\n        <postinstall file=\"./postinstall\"/>"
+		SCRIPT+=$'\n        <postinstall file="./postinstall"/>'
 	fi
-	SCRIPT+="\n    </scripts>"
+	SCRIPT+=$'\n    </scripts>'
 fi
 
-cat <<EOF > ${TMP_DIR}/darwin/flat/PackageInfo
+cat <<EOF > ${TMP_DIR}/flat/base.pkg/PackageInfo
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <pkg-info overwrite-permissions="true" relocatable="false" identifier="${IDENTIFIER}" postinstall-action="none" version="${VERSION}" format-version="2" generator-version="InstallCmds-681 (18E226)" install-location="${INSTALL_LOC}" auth="root">
     <payload numberOfFiles="${NUM_FILES}" installKBytes="${INSTALL_KB_SIZE}"/>
@@ -97,9 +97,9 @@ cat <<EOF > ${TMP_DIR}/darwin/flat/PackageInfo
 </pkg-info>
 EOF
 
-( cd "${TMP_DIR}/darwin/root" && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > "${TMP_DIR}/darwin/flat/Payload"
-mkbom -u 0 -g 80 "${TMP_DIR}/darwin/root" "${TMP_DIR}/darwin/flat/Bom"
-( cd "${TMP_DIR}/darwin/flat/" && xar --compression none -cf "${PKG_LOCATION}" * )
+( cd "${TMP_DIR}/root" && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > "${TMP_DIR}/flat/base.pkg/Payload"
+mkbom -u 0 -g 80 "${TMP_DIR}/root" "${TMP_DIR}/flat/base.pkg/Bom"
+( cd "${TMP_DIR}/flat/base.pkg" && xar --compression none -cf "${PKG_LOCATION}" * )
 echo "osx package has been built: ${PKG_LOCATION}"
 
 rm -rf "$TMP_DIR"
