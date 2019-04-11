@@ -1,0 +1,105 @@
+#!/bin/bash
+
+SELF="$0"
+
+TMP_DIR=$(mktemp -d)
+echo "$TMP_DIR"
+
+SCRIPTS_SRC=""
+ROOT=$(realpath ./)
+IDENTIFIER="com.example.pkg"
+VERSION="0.0.0"
+INSTALL_LOC="/"
+
+while true; do
+	case "$1" in
+		--root )
+			if [ ! -z "$2" ]; then
+				ROOT=$(realpath "$2")
+				shift 2
+			else
+				echo "No argument"
+				exit 1
+			fi
+			;;
+		--install-location )
+			if [ ! -z "$2" ]; then
+				INSTALL_LOC="$2"
+				shift 2
+			else
+				echo "No argument"
+				exit 1
+			fi
+			;;
+		--scripts )
+			if [ ! -z "$2" ]; then
+				SCRIPTS_SRC=$(realpath "$2")
+				shift 2
+			else
+				echo "No argument"
+				exit 1
+			fi
+			;;
+		--identifier )
+			if [ ! -z "$2" ]; then
+				IDENTIFIER="$2"
+				shift 2
+			else
+				echo "No argument"
+				exit 1
+			fi
+			;;
+		--version )
+			if [ ! -z "$2" ]; then
+				VERSION="$2"
+				shift 2
+			else
+				echo "No argument"
+				exit 1
+			fi
+			;;
+		*) break ;;
+	esac
+done
+
+PKG_LOCATION=$(realpath "$1")
+
+mkdir -p "$TMP_DIR/darwin/flat/"
+mkdir -p "$TMP_DIR/darwin/root/$(dirname "$INSTALL_LOC")"
+cp -R "$ROOT" "$TMP_DIR/darwin/root/$INSTALL_LOC"
+NUM_FILES=$(find ${TMP_DIR}/darwin/root | wc -l)
+INSTALL_KB_SIZE=$(du -k -s ${TMP_DIR}/darwin/root | awk '{print $1}')
+
+SCRIPT="<scripts/>"
+
+if [ -d "$SCRIPTS_SRC" ]; then
+	cp -R "$SCRIPTS_SRC" "${TMP_DIR}/darwin/flat/Scripts"
+	SCRIPT="<scripts>"
+	if [ -f "$SCRIPTS_SRC/preinstall" ]; then
+		SCRIPT+="\n        <preinstall file=\"./preinstall\"/>"
+	fi
+	if [ -f "$SCRIPTS_SRC/postinstall" ]; then
+		SCRIPT+="\n        <postinstall file=\"./postinstall\"/>"
+	fi
+	SCRIPT+="\n    </scripts>"
+fi
+
+cat <<EOF > ${TMP_DIR}/darwin/flat/PackageInfo
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<pkg-info overwrite-permissions="true" relocatable="false" identifier="${IDENTIFIER}" postinstall-action="none" version="${VERSION}" format-version="2" generator-version="InstallCmds-681 (18E226)" install-location="${INSTALL_LOC}" auth="root">
+    <payload numberOfFiles="${NUM_FILES}" installKBytes="${INSTALL_KB_SIZE}"/>
+    <bundle-version/>
+    <update-bundle/>
+    <atomic-update-bundle/>
+    <strict-identifier/>
+    <relocate/>
+    ${SCRIPT}
+</pkg-info>
+EOF
+
+( cd "${TMP_DIR}/darwin/root" && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > "${TMP_DIR}/darwin/flat/Payload"
+mkbom -u 0 -g 80 "${TMP_DIR}/darwin/root" "${TMP_DIR}/darwin/flat/Bom"
+( cd "${TMP_DIR}/darwin/flat/" && xar --compression none -cf "${PKG_LOCATION}" * )
+echo "osx package has been built: ${PKG_LOCATION}"
+
+rm -rf "$TMP_DIR"
