@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
 COPY tools /tools
-ENV OSXCROSS_SDK_VERSION=10.11
+ENV OSXCROSS_SDK_VERSION=10.13
 
 RUN dpkg --add-architecture i386 && \
 	apt-get update -qq && \
@@ -10,13 +10,14 @@ RUN dpkg --add-architecture i386 && \
 		# for osx cross
 		clang autotools-dev automake cmake libfuse-dev \
 		# golang
-		golang-go go-dep upx \
+		golang-go upx \
 		# xar
 		libxml2-dev openssl1.0 libssl1.0-dev \
 		# windows
 		nsis mingw-w64 \
 		# linux (deb, rpm)
 		fakeroot dh-make rpm && \
+	mkdir /go && \
 # build xar
 	cd /tmp && \
 	curl -sL https://github.com/downloads/mackyle/xar/xar-1.6.1.tar.gz | tar zx && \
@@ -38,7 +39,7 @@ RUN dpkg --add-architecture i386 && \
 	sed -i -e 's|-march=native||g' ./build_clang.sh ./wrapper/build.sh && \
 	./tools/get_dependencies.sh && \
 	curl -sL -o ./tarballs/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz \
-	https://github.com/phracker/MacOSX-SDKs/releases/download/10.13/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz && \
+	"https://github.com/phracker/MacOSX-SDKs/releases/download/10.13/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz" && \
 	echo | PORTABLE=1 ./build.sh && \
 	./build_compiler_rt.sh && \
 	ldconfig && \
@@ -51,6 +52,6 @@ RUN dpkg --add-architecture i386 && \
 ENV GOPATH=/go
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/tools:/osxcross/target/bin
 
-WORKDIR /go
+WORKDIR /build
 
 CMD [ "/bin/bash" ]
