@@ -9,6 +9,10 @@ ENV PORTABLE=1
 
 RUN dpkg --add-architecture i386 && \
 	apt-get update -qq && \
+	apt-get install -qq -y software-properties-common && \
+	rm -rf /var/lib/apt/lists/* && \
+	add-apt-repository ppa:longsleep/golang-backports && \
+	apt-get update -qq && \
 	apt-get install -qq --assume-yes apt-utils && \
 	apt-get install -qq -y wget curl git \
 		gcc g++ make \
