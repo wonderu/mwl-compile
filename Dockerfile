@@ -1,10 +1,15 @@
 FROM ubuntu:latest
 
 COPY tools /tools
+
 ENV OSXCROSS_SDK_VERSION=10.13
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PORTABLE=1
 
 RUN dpkg --add-architecture i386 && \
 	apt-get update -qq && \
+	apt-get install -qq --assume-yes apt-utils && \
 	apt-get install -qq -y wget curl git \
 		gcc g++ make \
 		# for osx cross
@@ -36,7 +41,6 @@ RUN dpkg --add-architecture i386 && \
 # osx-cross
 	git clone https://github.com/tpoechtrager/osxcross.git /osxcross && \
 	cd /osxcross && \
-	sed -i -e 's|-march=native||g' ./build_clang.sh ./wrapper/build.sh && \
 	./tools/get_dependencies.sh && \
 	curl -sL -o ./tarballs/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz \
 	"https://github.com/phracker/MacOSX-SDKs/releases/download/10.13/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz" && \
