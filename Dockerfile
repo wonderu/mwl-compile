@@ -25,7 +25,9 @@ RUN dpkg --add-architecture i386 && \
 		# windows
 		nsis mingw-w64 \
 		# linux (deb, rpm)
-		fakeroot dh-make rpm && \
+		fakeroot dh-make rpm \
+		# code-signing
+		osslsigncode && \
 	mkdir /go && \
 # build xar
 	cd /tmp && \
@@ -53,8 +55,7 @@ RUN dpkg --add-architecture i386 && \
 	ldconfig && \
 	rm -rf build tarballs/MacOSX* images && \
 # cleanup
-	cd /tmp && \
-	rm -rf * && \
+	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
 	apt-get clean
 
 ENV GOPATH=/go
