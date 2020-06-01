@@ -56,7 +56,7 @@ RUN	git clone https://github.com/tpoechtrager/osxcross.git /osxcross && \
 	ldconfig && \
 	rm -rf build tarballs/MacOSX* images
 
-RUN apt-get install -qq gobjc++
+RUN apt-get install -qq gobjc++ libxml2-devel g zlib1g-dev libmpc-dev libmpfr-dev libgmp-dev
 
 # cleanup
 RUN	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
