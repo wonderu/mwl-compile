@@ -55,6 +55,9 @@ RUN	git clone https://github.com/tpoechtrager/osxcross.git /osxcross && \
 	./build_compiler_rt.sh && \
 	ldconfig && \
 	rm -rf build tarballs/MacOSX* images
+
+RUN apt-get install -qq gobjc++
+
 # cleanup
 RUN	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
 	apt-get clean
