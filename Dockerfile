@@ -44,13 +44,13 @@ RUN	cd /tmp && \
 	make install && \
 	ldconfig 
 
-ENV OSXCROSS_SDK_VERSION=10.13
+ENV OSXCROSS_SDK_VERSION=10.14
 # osx-cross
 RUN	git clone https://github.com/tpoechtrager/osxcross.git /osxcross && \
 	cd /osxcross && \
 	./tools/get_dependencies.sh && \
 	curl -sL -o ./tarballs/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz \
-	"https://github.com/phracker/MacOSX-SDKs/releases/download/10.13/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz" && \
+	"https://github.com/phracker/MacOSX-SDKs/releases/download/10.15/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz" && \
 	echo | PORTABLE=1 ./build.sh && \
 	./build_compiler_rt.sh && \
 	ldconfig && \
